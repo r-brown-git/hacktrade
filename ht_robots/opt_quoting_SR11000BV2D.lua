@@ -1,4 +1,4 @@
-dofile(getScriptPath().."\\hacktrade-ffeast.lua")
+dofile("../hacktrade-ffeast.lua")
 
 require("Black-Scholes") -- функции расчета теоретической цены и греков
 require("utils2")		 -- вспомогательные функции

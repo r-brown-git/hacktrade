@@ -1,4 +1,6 @@
-dofile(getScriptPath().."\\hacktrade-ffeast.lua")
+dofile("../hacktrade-ffeast.lua")
+
+require("utils2")		 -- вспомогательные функции
 
 function Robot()
 
