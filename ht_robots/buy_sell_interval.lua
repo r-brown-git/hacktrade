@@ -1,10 +1,10 @@
-dofile("../hacktrade-ffeast.lua")
+dofile(string.format("%s\\lua\\hacktrade-ffeast.lua", getWorkingFolder()))
 
 require("utils2")		 -- вспомогательные функции
 
 function Robot()
 
-	ACC = "SPBFUT*****"		-- торговый счет
+	ACC ="SPBFUT****"		-- торговый счет
 	CLI = "158****"			-- код клиента
 	FUT_CLASS = "SPBFUT"		-- класс FORTS
 	FUT_TICKER = "SRZ2"		-- код бумаги фьючерса
@@ -40,11 +40,32 @@ function Robot()
 	local planned2
 	
 	log:trace("center "..formatPrice(center).."; interval "..formatPrice(PRICE_INTERVAL).."; step "..formatPrice(PRICE_STEP))
+	
+	local is_trading_time = true
 
     while true do
 	
-		while isConnected() ~= 1 or not isTradingTime() do
+		while isConnected() ~= 1 do
+			log:trace("not connected, waiting for connect")
 			sleep(15000)
+		end
+		
+		if is_trading_time and not isTradingTime() then
+			log:trace("trading time ended, cancelling orders")
+			is_trading_time = false
+			order1:update(nil, 0)
+			order2:update(nil, 0)
+			Trade()
+		end
+			
+		while not is_trading_time do
+			if isTradingTime() then
+				log:trace("trading time started, resuming orders")
+				is_trading_time = true
+			else
+				log:trace("waiting for resume trading")
+				sleep(15000)
+			end
 		end
 		
 		if math.abs(order1.position + order2.position) < ICEBERG_SIZE then
@@ -64,7 +85,8 @@ function Robot()
 		
 		Trade()
 		
-		if order1.order ~= nil and order2.order ~= nil and order1.order.price == price1 and order2.order.price == price2 then
+		if order1.order ~= nil and order2.order ~= nil and order1.order.price - price1 == 0 and order2.order.price - price2 == 0
+		then
 			sleep(SLEEP_WITH_ORDER)
 		else
 			sleep(SLEEP_WO_ORDER)

@@ -1,13 +1,13 @@
-dofile("../hacktrade-ffeast.lua")
+dofile(string.format("%s\\lua\\hacktrade-ffeast.lua", getWorkingFolder()))
 
 require("Black-Scholes") -- функции расчета теоретической цены и греков
 require("utils2")		 -- вспомогательные функции
 
 function Robot()
 
-	FIRMID = "SPBFUT5***0"
-	ACC = "SPBFUT*****"
-	CLI = "158****"
+	FIRMID = "SPBFUT****" -- код фирмы
+	ACC = "SPBFUT****"		-- торговый счет
+	CLI = "158****"			-- код клиента
 	FUT_CLASS = "SPBFUT"
 	OPT_CLASS = "SPBOPT"
 	FUT_TICKER = "SRZ2"

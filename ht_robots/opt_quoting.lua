@@ -1,12 +1,12 @@
-dofile("../hacktrade-ffeast.lua")
+dofile(string.format("%s\\lua\\hacktrade-ffeast.lua", getWorkingFolder()))
 
 require("Black-Scholes") -- функции расчета теоретической цены и греков
 require("utils2")		 -- вспомогательные функции
 
 function Robot()
 
-	ACC = "SPBFUT*****"
-	CLI = "158****"
+	ACC ="SPBFUT****"				-- торговый счет
+	CLI = "158****"					-- код клиента
 	FUT_CLASS = "SPBFUT"
 	OPT_CLASS = "SPBOPT"
 	FUT_TICKER = "SRZ2" 			-- FUT_TICKER = "SRZ2"
@@ -14,10 +14,10 @@ function Robot()
 	
 	ORDER1_SIZE = 3					-- число лотов на покупку
 	ORDER2_SIZE = 1					-- число лотов на продажу
-	ORDER1_MIN_PROFIT_VOLA = -8.00	-- минимальная скидка покупки по волатильности, чтобы не стоять в конце стакана, если есть конкуренты
-	ORDER1_MAX_PROFIT_VOLA = -14.00	-- максимальная: если стакан пустой, котируем покупку по цене девешле на это значение волатильности
-	ORDER2_MIN_PROFIT_VOLA = 8.00
-	ORDER2_MAX_PROFIT_VOLA = 14.00
+	ORDER1_MIN_PROFIT_VOLA = -6.00	-- минимальная скидка покупки по волатильности, чтобы не стоять в конце стакана, если есть конкуренты
+	ORDER1_MAX_PROFIT_VOLA = -10.00	-- максимальная: если стакан пустой, котируем покупку по цене девешле на это значение волатильности
+	ORDER2_MIN_PROFIT_VOLA = 6.00
+	ORDER2_MAX_PROFIT_VOLA = 10.00
 	SENSITIVITY = 3					-- люфт - разница между текущей ценой заявки и новой расчетной ценой в шагах цены. Если разница меньше, чем люфт, то имеющуюся заявку не меняем.
 	
 	SLEEP_WITH_ORDER = 5000	-- время ожидания исполнения выставленного ордера до пересчета теоретической цены (в миллисекундах)
@@ -28,6 +28,7 @@ function Robot()
 		ticker = OPT_TICKER,
 	}
 	
+	-- ордер на покупку
 	order1 = SmartOrder {
 		market = OPT_CLASS,
 		ticker = OPT_TICKER,
@@ -35,6 +36,7 @@ function Robot()
 		client = CLI,
 	}
 	
+	-- ордер на продажу
 	order2 = SmartOrder {
 		market = OPT_CLASS,
 		ticker = OPT_TICKER,
@@ -48,21 +50,42 @@ function Robot()
 	local tmpParam = {}
 	
 	local theor_price_quik = 0
-	local order1_theor_price_min_profit = 0
-	local order1_theor_price_max_profit = 0
-	local order2_theor_price_min_profit = 0
-	local order2_theor_price_max_profit = 0
-	local order1_price_prev = 0
-	local order1_price = 0
-	local order2_price_prev = 0
-	local order2_price = 0
+	local theor_price_min_profit1 = 0
+	local theor_price_max_profit1 = 0
+	local theor_price_min_profit2 = 0
+	local theor_price_max_profit2 = 0
+	local price1_prev = 0
+	local price1 = 0
+	local price2_prev = 0
+	local price2 = 0
 	local best_offer = 0
 	local best_bid = 0
 	
+	local is_trading_time = true
+	
 	while true do
 		
-		while isConnected() ~= 1 or not isTradingTime() do
+		while isConnected() ~= 1 do
+			log:trace("not connected, waiting for connect")
 			sleep(15000)
+		end
+		
+		if is_trading_time and not isTradingTime() then
+			log:trace("trading time ended, cancelling orders")
+			is_trading_time = false
+			order1:update(nil, 0)
+			order2:update(nil, 0)
+			Trade()
+		end
+			
+		while not is_trading_time do
+			if isTradingTime() then
+				log:trace("trading time started, resuming orders")
+				is_trading_time = true
+			else
+				log:trace("waiting for resume trading")
+				sleep(15000)
+			end
 		end
 
 		tmpParam = {
@@ -76,16 +99,16 @@ function Robot()
 		theor_price_quik = TheorPrice(tmpParam)
 		
 		tmpParam.volatility = feed.volatility + ORDER1_MIN_PROFIT_VOLA
-		order1_theor_price_min_profit = TheorPrice(tmpParam)
+		theor_price_min_profit1 = TheorPrice(tmpParam)
 
 		tmpParam.volatility = feed.volatility + ORDER1_MAX_PROFIT_VOLA
-		order1_theor_price_max_profit = TheorPrice(tmpParam)
+		theor_price_max_profit1 = TheorPrice(tmpParam)
 
 		tmpParam.volatility = feed.volatility + ORDER2_MIN_PROFIT_VOLA
-		order2_theor_price_min_profit = TheorPrice(tmpParam)
+		theor_price_min_profit2 = TheorPrice(tmpParam)
 		
 		tmpParam.volatility = feed.volatility + ORDER2_MAX_PROFIT_VOLA
-		order2_theor_price_max_profit = TheorPrice(tmpParam)
+		theor_price_max_profit2 = TheorPrice(tmpParam)
 
 		if feed.bids[1] ~= nil then
 			if feed.bids[1].price ~= tonumber(order1.price) then
@@ -103,77 +126,78 @@ function Robot()
 			end
 		end
 
-		order1_price = order1_theor_price_max_profit
+		price1 = theor_price_max_profit1
 		if best_bid ~= 0 then
-			if best_bid > order1_price then
-				if best_bid > order1_theor_price_min_profit then
-					order1_price = order1_theor_price_min_profit
+			if best_bid > price1 then
+				if best_bid > theor_price_min_profit1 then
+					price1 = theor_price_min_profit1
 				else
-					order1_price = (best_bid + order1_theor_price_min_profit) / 2
+					price1 = (best_bid + theor_price_min_profit1) / 2
 				end
 			end
 		end
 
-		order2_price = order2_theor_price_max_profit
+		price2 = theor_price_max_profit2
 		if best_offer ~= 0 then
-			if best_offer < order2_price then
-				if best_offer < order2_theor_price_min_profit then
-					order2_price = order2_theor_price_min_profit
+			if best_offer < price2 then
+				if best_offer < theor_price_min_profit2 then
+					price2 = theor_price_min_profit2
 				else
-					order2_price = (best_offer + order2_theor_price_min_profit) / 2
+					price2 = (best_offer + theor_price_min_profit2) / 2
 				end
 			end
 		end
 
-		if math.abs(order1_price - order1_price_prev) < SENSITIVITY * step then
-			order1_price = order1_price_prev
+		if math.abs(price1 - price1_prev) < SENSITIVITY * step then
+			price1 = price1_prev
 		else
-			order1_price_prev = order1_price
+			price1_prev = price1
 		end
 
-		if math.abs(order2_price - order2_price_prev) < SENSITIVITY * step then
-			order2_price = order2_price_prev
+		if math.abs(price2 - price2_prev) < SENSITIVITY * step then
+			price2 = price2_prev
 		else
-			order2_price_prev = order2_price
+			price2_prev = price2
 		end
 
 		-- защита от отрицательной или нулевой цены
-		if order1_price < step then
-			order1_price = step
+		if price1 < step then
+			price1 = step
 		end
-		if order2_price < step then
-			order2_price = step
+		if price2 < step then
+			price2 = step
 		end
 
 		theor_price_quik = theor_price_quik - math.fmod(theor_price_quik, step)
 		
-		order1_theor_price_max_profit = order1_theor_price_max_profit - math.fmod(order1_theor_price_max_profit, step)
-		order1_theor_price_min_profit = order1_theor_price_min_profit - math.fmod(order1_theor_price_min_profit, step)
+		theor_price_max_profit1 = theor_price_max_profit1 - math.fmod(theor_price_max_profit1, step)
+		theor_price_min_profit1 = theor_price_min_profit1 - math.fmod(theor_price_min_profit1, step)
 		best_bid = best_bid - math.fmod(best_bid, step)
-		order1_price = order1_price - math.fmod(order1_price, step)
+		price1 = price1 - math.fmod(price1, step)
 		
-		order2_theor_price_max_profit = order2_theor_price_max_profit - math.fmod(order2_theor_price_max_profit, step)
-		order2_theor_price_min_profit = order2_theor_price_min_profit - math.fmod(order2_theor_price_min_profit, step)
+		theor_price_max_profit2 = theor_price_max_profit2 - math.fmod(theor_price_max_profit2, step)
+		theor_price_min_profit2 = theor_price_min_profit2 - math.fmod(theor_price_min_profit2, step)
 		best_bid = best_bid - math.fmod(best_bid, step)
-		order2_price = order2_price - math.fmod(order2_price, step)
+		price2 = price2 - math.fmod(price2, step)
 		
-		order1:update(formatPrice(order1_price), ORDER1_SIZE-order2.position)
+		order1:update(formatPrice(price1), ORDER1_SIZE-order2.position)
 
-		order2:update(formatPrice(order2_price), -(ORDER2_SIZE+order1.position))
+		order2:update(formatPrice(price2), -(ORDER2_SIZE+order1.position))
 		
 		Trade()
 		
 		log:trace(
 			"T ".. formatPrice(theor_price_quik) .. "; " .. 
-			"buy " .. order1.planned .. " {" .. formatPrice(order1_theor_price_max_profit).. "-" .. formatPrice(order1_theor_price_min_profit) .. "; " ..
+			"buy " .. order1.planned .. " {" .. formatPrice(theor_price_max_profit1).. "-" .. formatPrice(theor_price_min_profit1) .. "; " ..
 			"bid " .. formatPrice(best_bid).. "; " .. 
-			"price " .. formatPrice(order1_price).. "} " ..
-			"sell " .. -order2.planned .. " {" .. formatPrice(order2_theor_price_max_profit).. "-" .. formatPrice(order2_theor_price_min_profit) .. "; " ..
+			"price " .. formatPrice(price1).. "} " ..
+			"sell " .. -order2.planned .. " {" .. formatPrice(theor_price_max_profit2).. "-" .. formatPrice(theor_price_min_profit2) .. "; " ..
 			"offer " .. formatPrice(best_offer).. "; " .. 
-			"price " .. formatPrice(order2_price).. "}"
+			"price " .. formatPrice(price2).. "}"
 		);
 		
-		if order1.order ~= nil and order1.order.price == order1_price or order2.order ~= nil and order2.order.price == order2_price then
+		if order1.order ~= nil and order2.order ~= nil and order1.order.price - price1 == 0 and order2.order.price - price2 == 0
+		then
 			sleep(SLEEP_WITH_ORDER)
 		else
 			sleep(SLEEP_WO_ORDER)

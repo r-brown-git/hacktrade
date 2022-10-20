@@ -41,20 +41,20 @@ function isTradingTime()
 	local dt = os.sysdate()
 	local minutes_count = dt["hour"] * 60 + dt["min"]
 	
-	 -- < 09:05
-	if minutes_count < 9*60 + 5 then
+	 -- <= 09:05
+	if minutes_count <= 9*60 + 5 then
 		return false
 	end
-	-- 14:00 - 14:05
-	if minutes_count > 14*60 and minutes_count < 14*60 + 5 then
+	-- 13:55 - 14:05
+	if minutes_count >= 13*60 + 55 and minutes_count <= 14*60 + 5 then
 		return false
 	end
 	-- 18:45 - 19:05
-	if minutes_count > 18*60 + 45 and minutes_count < 19*60 + 5 then
+	if minutes_count >= 18*60 + 45 and minutes_count <= 19*60 + 5 then
 		return false
 	end
-	-- > 23:45
-	if minutes_count > 23*60 + 45 then
+	-- >= 23:45
+	if minutes_count >= 23*60 + 45 then
 		return false
 	end
 	
