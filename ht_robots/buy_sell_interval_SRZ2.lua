@@ -9,8 +9,8 @@ function Robot()
 	FUT_CLASS = "SPBFUT"		-- класс FORTS
 	FUT_TICKER = "SRZ2"		-- код бумаги фьючерса
 	
-	PRICE_INTERVAL = 35		-- покупка выше центра, продажа ниже центра
-	PRICE_STEP = 15			-- между частями продаж/покупок
+	PRICE_INTERVAL = 55		-- покупка выше центра, продажа ниже центра
+	PRICE_STEP = 25			-- между частями продаж/покупок
 	ICEBERG_SIZE = 20
 	ICEBERG_PART = 1
 	
@@ -53,8 +53,8 @@ function Robot()
 		if is_trading_time and not isTradingTime() then
 			log:trace("trading time ended, cancelling orders")
 			is_trading_time = false
-			order1:update(nil, 0)
-			order2:update(nil, 0)
+			order1:update(nil, order1.position)
+			order2:update(nil, order2.position)
 			Trade()
 		end
 			

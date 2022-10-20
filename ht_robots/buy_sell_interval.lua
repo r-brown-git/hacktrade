@@ -4,7 +4,7 @@ require("utils2")		 -- вспомогательные функции
 
 function Robot()
 
-	ACC ="SPBFUT****"		-- торговый счет
+	ACC = "SPBFUT****"		-- торговый счет
 	CLI = "158****"			-- код клиента
 	FUT_CLASS = "SPBFUT"		-- класс FORTS
 	FUT_TICKER = "SRZ2"		-- код бумаги фьючерса
@@ -53,8 +53,8 @@ function Robot()
 		if is_trading_time and not isTradingTime() then
 			log:trace("trading time ended, cancelling orders")
 			is_trading_time = false
-			order1:update(nil, 0)
-			order2:update(nil, 0)
+			order1:update(nil, order1.position)
+			order2:update(nil, order2.position)
 			Trade()
 		end
 			
