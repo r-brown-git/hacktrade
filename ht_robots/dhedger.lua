@@ -12,8 +12,8 @@ function Robot()
 	OPT_CLASS = "SPBOPT"
 	FUT_TICKER = "SRZ2"
 	
-	MIN_DELTA = -5			-- если дельта позиции становится ниже MIN_DELTA, увеличить дельту до MIN_DELTA
-	MAX_DELTA = 5			-- если дельта позиции становится выше MAX_DELTA, уменьшить дельту до MAX_DELTA
+	MIN_DELTA = -1			-- если дельта позиции становится ниже MIN_DELTA, увеличить дельту до MIN_DELTA
+	MAX_DELTA = 1			-- если дельта позиции становится выше MAX_DELTA, уменьшить дельту до MAX_DELTA
 	SENSITIVITY_DELTA = 2	-- хеджировать только если отклонение дельты позиции превышает SENSITIVITY_DELTA
 	
 	feed = MarketData {
@@ -43,8 +43,9 @@ function Robot()
 	local hedge_count
 
 	while true do
-	
-		while isConnected() ~= 1 or not isTradingTime() do
+		
+		while isConnected() ~= 1 or tonumber(getParamEx(FUT_CLASS, FUT_TICKER, "TRADINGSTATUS").param_value) ~= 1 or not isTradingTime() do
+			log:trace("waiting for a resuming trading")
 			sleep(15000)
 		end
 		
