@@ -5,8 +5,8 @@ require("utils2")		 -- вспомогательные функции
 
 function Robot()
 
-	ACC ="SPBFUT****"				-- торговый счет
-	CLI = "158****"					-- код клиента
+	ACC = "SPBFUT****"		-- торговый счет
+	CLI = "158****"			-- код клиента
 	FUT_CLASS = "SPBFUT"
 	OPT_CLASS = "SPBOPT"
 	FUT_TICKER = "SRZ2" 			-- FUT_TICKER = "SRZ2"
@@ -66,7 +66,7 @@ function Robot()
 	while true do
 		
 		while isConnected() ~= 1 do
-			log:trace("not connected, waiting for connect")
+			log:trace("not connected, waiting for connection")
 			sleep(15000)
 		end
 		
@@ -83,7 +83,7 @@ function Robot()
 				log:trace("trading time started, resuming orders")
 				is_trading_time = true
 			else
-				log:trace("waiting for resume trading")
+				log:trace("waiting for a resuming trading")
 				sleep(15000)
 			end
 		end
@@ -188,15 +188,15 @@ function Robot()
 		
 		log:trace(
 			"T ".. formatPrice(theor_price_quik) .. "; " .. 
-			"buy " .. order1.planned .. " {" .. formatPrice(theor_price_max_profit1).. "-" .. formatPrice(theor_price_min_profit1) .. "; " ..
+			"buy " .. (order1.planned - order1.position) .. " {" .. formatPrice(theor_price_max_profit1).. "-" .. formatPrice(theor_price_min_profit1) .. "; " ..
 			"bid " .. formatPrice(best_bid).. "; " .. 
 			"price " .. formatPrice(price1).. "} " ..
-			"sell " .. -order2.planned .. " {" .. formatPrice(theor_price_max_profit2).. "-" .. formatPrice(theor_price_min_profit2) .. "; " ..
+			"sell " .. -(order2.planned - order2.position) .. " {" .. formatPrice(theor_price_max_profit2).. "-" .. formatPrice(theor_price_min_profit2) .. "; " ..
 			"offer " .. formatPrice(best_offer).. "; " .. 
 			"price " .. formatPrice(price2).. "}"
 		);
 		
-		if order1.order ~= nil and order2.order ~= nil and order1.order.price - price1 == 0 and order2.order.price - price2 == 0
+		if order1.order ~= nil and order1.order.price - price1 == 0 or order2.order ~= nil and order2.order.price - price2 == 0
 		then
 			sleep(SLEEP_WITH_ORDER)
 		else

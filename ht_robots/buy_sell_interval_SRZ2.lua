@@ -4,8 +4,8 @@ require("utils2")		 -- вспомогательные функции
 
 function Robot()
 
-	ACC = "SPBFUT****"				-- торговый счет
-	CLI = "158****"					-- код клиента
+	ACC = "SPBFUT****"		-- торговый счет
+	CLI = "158****"			-- код клиента
 	FUT_CLASS = "SPBFUT"		-- класс FORTS
 	FUT_TICKER = "SRZ2"		-- код бумаги фьючерса
 	
@@ -46,7 +46,7 @@ function Robot()
     while true do
 	
 		while isConnected() ~= 1 do
-			log:trace("not connected, waiting for connect")
+			log:trace("not connected, waiting for connection")
 			sleep(15000)
 		end
 		
@@ -63,7 +63,7 @@ function Robot()
 				log:trace("trading time started, resuming orders")
 				is_trading_time = true
 			else
-				log:trace("waiting for resume trading")
+				log:trace("waiting for a resuming trading")
 				sleep(15000)
 			end
 		end
