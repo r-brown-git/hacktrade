@@ -41,74 +41,86 @@ function Robot()
 	local opt_month
 	local opt_type
 	local hedge_count
-
-	while true do
-		
-		while isConnected() ~= 1 or tonumber(getParamEx(FUT_CLASS, FUT_TICKER, "TRADINGSTATUS").param_value) ~= 1 or not isTradingTime() do
-			log:trace("waiting for a resuming trading")
-			sleep(15000)
-		end
-		
-		dt = os.sysdate()
-		
-		if last_update_day == 0 or dt["day"] ~= last_update_day and dt["hour"] >= 19 then
-			last_update_day = dt["day"]
-			
-			all_opt_list = string.split(getClassSecurities(OPT_CLASS), ',')
-			log:trace("fetched " .. #all_opt_list .. " option codes")
-			
-			for i, opt_ticker in ipairs(all_opt_list) do
-				if opt_ticker:sub(1, 2) == FUT_TICKER:sub(1, 2) then
-					table.insert(our_opt_list, opt_ticker)
+	
+	local function isReady()
+		if isConnected() == 1 then
+			if isTradingTime() then
+				if tonumber(getParamEx(FUT_CLASS, FUT_TICKER, "TRADINGSTATUS").param_value) == 1 then
+					return true
 				end
 			end
 		end
 		
-		sum_delta = 0
-		hedge_count = 0
+		log:trace("waiting for a resuming trading")
+		sleep(15000)
+		return false
+	end
+
+	while true do
 		
-		for i, opt_ticker in ipairs(our_opt_list) do
-			pos = getFuturesHolding(FIRMID, ACC, opt_ticker, 0)
-			if pos and pos.totalnet ~= 0 then
-
-				opt_strike, opt_month = string.match(opt_ticker, '^%a%a([%d]+[.]?[%d]*)B(%a)%d%a?$')
-				opt_type = isOptionCall(opt_month) and "Call" or "Put"
+		if isReady() then
+		
+			dt = os.sysdate()
+			
+			if last_update_day == 0 or dt["day"] ~= last_update_day and dt["hour"] >= 19 then
+				last_update_day = dt["day"]
 				
-				tmpParam = {
-					["optiontype"] = opt_type,                                                                  -- тип опциона
-					["settleprice"] = feed.last,           														-- текущая цена фьючерса
-					["strike"] = opt_strike,                       												-- страйк опциона
-					["volatility"] = getParamEx(OPT_CLASS, opt_ticker, "volatility").param_value,     			-- волатильность опциона из QUIK
-					["DAYS_TO_MAT_DATE"] = getParamEx(OPT_CLASS, opt_ticker, "DAYS_TO_MAT_DATE").param_value    -- число дней до экспирации опциона
-				}
+				all_opt_list = string.split(getClassSecurities(OPT_CLASS), ',')
+				log:trace("fetched " .. #all_opt_list .. " option codes")
 				
-				delta = Greeks(tmpParam)["Delta"]
-
-				sum_delta = sum_delta + pos.totalnet * delta
-				
+				for i, opt_ticker in ipairs(all_opt_list) do
+					if opt_ticker:sub(1, 2) == FUT_TICKER:sub(1, 2) then
+						table.insert(our_opt_list, opt_ticker)
+					end
+				end
 			end
+			
+			sum_delta = 0
+			hedge_count = 0
+			
+			for i, opt_ticker in ipairs(our_opt_list) do
+				pos = getFuturesHolding(FIRMID, ACC, opt_ticker, 0)
+				if pos and pos.totalnet ~= 0 then
+
+					opt_strike, opt_month = string.match(opt_ticker, '^%a%a([%d]+[.]?[%d]*)B(%a)%d%a?$')
+					opt_type = isOptionCall(opt_month) and "Call" or "Put"
+					
+					tmpParam = {
+						["optiontype"] = opt_type,                                                                  -- тип опциона
+						["settleprice"] = feed.last,           														-- текущая цена фьючерса
+						["strike"] = opt_strike,                       												-- страйк опциона
+						["volatility"] = getParamEx(OPT_CLASS, opt_ticker, "volatility").param_value,     			-- волатильность опциона из QUIK
+						["DAYS_TO_MAT_DATE"] = getParamEx(OPT_CLASS, opt_ticker, "DAYS_TO_MAT_DATE").param_value    -- число дней до экспирации опциона
+					}
+					
+					delta = Greeks(tmpParam)["Delta"]
+
+					sum_delta = sum_delta + pos.totalnet * delta
+					
+				end
+			end
+			
+			pos = getFuturesHolding(FIRMID, ACC, FUT_TICKER, 0)
+			if pos and pos.totalnet ~= 0 then
+				sum_delta = sum_delta + pos.totalnet
+			end
+			
+			if sum_delta < MIN_DELTA - SENSITIVITY_DELTA then
+				hedge_count = round(MIN_DELTA - sum_delta, 0)
+			elseif sum_delta > MAX_DELTA + SENSITIVITY_DELTA then
+				hedge_count = -round(sum_delta - MAX_DELTA, 0)
+			end
+			
+			log:trace(string.format("delta: %.4f; hedge_count: %d", sum_delta, hedge_count))
+			
+			if hedge_count ~= 0 then
+				repeat
+					order:update(feed.last, pos.totalnet + hedge_count)
+					Trade()
+				until order.filled
+			end
+			
+			sleep(5000)
 		end
-		
-		pos = getFuturesHolding(FIRMID, ACC, FUT_TICKER, 0)
-		if pos and pos.totalnet ~= 0 then
-			sum_delta = sum_delta + pos.totalnet
-		end
-		
-		if sum_delta < MIN_DELTA - SENSITIVITY_DELTA then
-			hedge_count = round(MIN_DELTA - sum_delta, 0)
-		elseif sum_delta > MAX_DELTA + SENSITIVITY_DELTA then
-			hedge_count = -round(sum_delta - MAX_DELTA, 0)
-		end
-		
-		log:trace(string.format("delta: %.4f; hedge_count: %d", sum_delta, hedge_count))
-		
-		if hedge_count ~= 0 then
-			repeat
-				order:update(feed.last, pos.totalnet + hedge_count)
-				Trade()
-			until order.filled
-		end
-		
-		sleep(5000)
 	end
 end
