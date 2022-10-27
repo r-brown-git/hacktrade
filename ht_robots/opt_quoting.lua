@@ -131,18 +131,20 @@ function Robot()
 			tmpParam.volatility = feed.volatility + ORDER2_MAX_PROFIT_VOLA
 			theor_price_max_profit2 = TheorPrice(tmpParam)
 
+			best_bid = 0
 			if feed.bids[1] ~= nil then
 				if feed.bids[1].price ~= tonumber(order1.price) then
 					best_bid = feed.bids[1].price
-				elseif (feed.bids[2] ~= nil) then
+				elseif feed.bids[2] ~= nil then
 					best_bid = feed.bids[2].price
 				end
 			end
 			
+			best_offer = 0
 			if feed.offers[1] ~= nil then
 				if feed.offers[1].price ~= tonumber(order2.price) then
 					best_offer = feed.offers[1].price
-				elseif (feed.offers[2] ~= nil) then
+				elseif feed.offers[2] ~= nil then
 					best_offer = feed.offers[2].price
 				end
 			end

@@ -43,8 +43,6 @@ function Robot()
     }
 	
 	local center = getParamEx(FUT_CLASS, FUT_TICKER, "settleprice").param_value
-
-	local sec_price_step = getParamEx(FUT_CLASS, FUT_TICKER, "SEC_PRICE_STEP").param_value
 	
 	local price1
 	local planned1

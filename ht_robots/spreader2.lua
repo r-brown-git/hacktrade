@@ -42,10 +42,10 @@ function Robot()
         ticker = FUT_TICKER,
     }
 	
+	local best_bid
+	local best_offer
 	local price1
-	local planned1
 	local price2
-	local planned2
 	
 	local is_trading_time = true
 	
@@ -93,27 +93,49 @@ function Robot()
 		if isReady() then
 
 			if order1.position + order2.position < ORDER1_MAX then
+				
+				best_bid = 0
 				if feed.bids[1] ~= nil then
-					price1 = formatPrice(feed.bids[1].price)
-					planned1 = order1.position + ORDER1_PART
-					order1:update(price1, planned1)
-					log:trace(string.format("order1 pos: %s; planned: %s; price: %s", order1.position, planned1, price1))
-				else
-					log:trace("bid is nil")
+					if feed.bids[1].price ~= tonumber(order1.price) and feed.bids[1].quantity ~= tonumber(order1.quantity) then
+						message("order1.quantity = "..tostring(order1.quantity))
+						best_bid = feed.bids[1].price
+					elseif feed.bids[2] ~= nil then
+						best_bid = feed.bids[2].price
+					end
 				end
+				
+				if best_bid ~= 0 then
+					price1 = best_bid
+					order1:update(price1, order1.position + ORDER1_PART)
+					log:trace(string.format("order1 pos: %s; planned: %s; price: %s;", order1.position, order1.planned, price1))
+				else
+					log:trace("no bids")
+				end
+				
 			else
 				log:trace(string.format("order1 max pos %s reached: %s ; %s", ORDER1_MAX, order1.position, order2.position))
 			end
 			
 			if order1.position + order2.position > ORDER2_MAX then
+				
+				best_offer = 0
 				if feed.offers[1] ~= nil then
-					price2 = formatPrice(feed.offers[1].price)
-					planned2 = order2.position + ORDER2_PART
-					order2:update(price2, planned2)
-					log:trace(string.format("order2 pos: %s; planned: %s; price: %s", order2.position, planned2, price2))
-				else
-					log:trace("offer is nil")
+					if feed.offers[1].price ~= tonumber(order2.price) and feed.offers[1].quantity ~= tonumber(order2.quantity) then
+						message("order2.quantity = "..tostring(order2.quantity))
+						best_offer = feed.offers[1].price
+					elseif feed.offers[2] ~= nil then
+						best_offer = feed.offers[2].price
+					end
 				end
+				
+				if best_offer ~= 0 then
+					price2 = best_offer
+					order2:update(price2, order2.position + ORDER2_PART)
+					log:trace(string.format("order2 pos: %s; planned: %s; price: %s;", order2.position, order2.planned, price2))
+				else
+					log:trace("no offers")
+				end
+				
 			else
 				log:trace(string.format("order2 max pos %s reached: %s ; %s", ORDER2_MAX, order1.position, order2.position))
 			end
@@ -132,5 +154,6 @@ function Robot()
 			
 		end
 	end
+
 
 end
