@@ -2,31 +2,31 @@ dofile(string.format("%s\\lua\\hacktrade-ffeast.lua", getWorkingFolder()))
 
 require("utils2")		 -- вспомогательные функции
 
--- Робот выставляет одновременно заявки и на покупку, и на продажу айсбергами.
--- При исполнении одной из них размер айсберга противоположной заявки пополняется на исполненное кол-во лотов
+-- Робот для набора позиции заданного объема лесенкой, где каждая следующая покупка(продажа) дешевле(дороже) предыдущей.
+-- При исполнении заявки, выставляется противоположная, тейк-профит, чтобы сразу закрыть часть в плюс и продолжить набирать позицию
+-- Удобно использовать для хэджирования купленных опционов
 
 function Robot()
 
 	ACC = "SPBFUT****"		-- торговый счет
 	CLI = "158****"			-- код клиента
 	FUT_CLASS = "SPBFUT"	-- класс FORTS
-	FUT_TICKER = "VIX2"		-- код бумаги фьючерса
+	FUT_TICKER = "SRZ2"		-- код бумаги фьючерса
 	
 	-- покупка
-	ORDER1_MAX = 10				-- макс лотов может быть набрано в лонг
-	ORDER1_PART = 2				-- лотов в одной заявке
+	ORDER1_MAX = 20				-- макс лотов может быть набрано в лонг
+	ORDER1_PART = 1				-- лотов в одной заявке
+	ORDER1_FROM_CENTER = -50	-- цена первой покупки при отклонении от цены старта на это значение
+	ORDER1_STEP = -15			-- следующая покупка ниже предыдущей на это значение
 	
 	-- продажа
-	ORDER2_MAX = -10			-- макс лотов может быть набрано в шорт
-	ORDER2_PART = -2			-- лотов в одной заявке
+	ORDER2_MAX = -20			-- макс лотов может быть набрано в шорт
+	ORDER2_PART = -1			-- лотов в одной заявке
+	ORDER2_FROM_CENTER = 50		-- цена первой продажи при отклонении от цены старта на это значение
+	ORDER2_STEP = 15			-- следующая продажа выше предыдущей на это значение
 	
 	SLEEP_WITH_ORDER = 5000	-- время ожидания исполнения выставленного ордера до пересчета теоретической цены (в миллисекундах)
 	SLEEP_WO_ORDER = 100	-- время ожидания после снятия ордера (в миллисекундах)
-	
-	feed = MarketData{
-        market = FUT_CLASS,
-        ticker = FUT_TICKER,
-    }
 	
 	order1 = SmartOrder{
         account = ACC,
@@ -41,6 +41,10 @@ function Robot()
         market = FUT_CLASS,
         ticker = FUT_TICKER,
     }
+	
+	local center = getParamEx(FUT_CLASS, FUT_TICKER, "settleprice").param_value
+
+	local sec_price_step = getParamEx(FUT_CLASS, FUT_TICKER, "SEC_PRICE_STEP").param_value
 	
 	local price1
 	local planned1
@@ -86,34 +90,26 @@ function Robot()
 		end
 	end
 
-	log:trace(string.format("order1 max: %s by %s; order2 max: %s by %s", ORDER1_MAX, ORDER1_PART, ORDER2_MAX, ORDER1_PART))
+	log:trace(string.format("center: %s; order1 {%s; %s; %s}; order2 {%s; %s; %s}", formatPrice(center), ORDER1_MAX, ORDER1_FROM_CENTER, ORDER1_STEP, ORDER2_MAX, ORDER2_FROM_CENTER, ORDER2_STEP))
 
     while true do
 		
 		if isReady() then
 
 			if order1.position + order2.position < ORDER1_MAX then
-				if feed.bids[1] ~= nil then
-					price1 = formatPrice(feed.bids[1].price)
-					planned1 = order1.position + ORDER1_PART
-					order1:update(price1, planned1)
-					log:trace(string.format("order1 pos: %s; planned: %s; price: %s", order1.position, planned1, price1))
-				else
-					log:trace("bid is nil")
-				end
+				price1 = formatPrice(center + ORDER1_FROM_CENTER + (order1.position+order2.position)*ORDER1_STEP)
+				planned1 = order1.position + ORDER1_PART
+				order1:update(price1, planned1)
+				log:trace(string.format("order1 pos: %s; planned: %s; price: %s", order1.position, planned1, price1))
 			else
 				log:trace(string.format("order1 max pos %s reached: %s ; %s", ORDER1_MAX, order1.position, order2.position))
 			end
 			
 			if order1.position + order2.position > ORDER2_MAX then
-				if feed.offers[1] ~= nil then
-					price2 = formatPrice(feed.offers[1].price)
-					planned2 = order2.position + ORDER2_PART
-					order2:update(price2, planned2)
-					log:trace(string.format("order2 pos: %s; planned: %s; price: %s", order2.position, planned2, price2))
-				else
-					log:trace("offer is nil")
-				end
+				price2 = formatPrice(center + ORDER2_FROM_CENTER - (order2.position+order1.position)*ORDER2_STEP)
+				planned2 = order2.position + ORDER2_PART
+				order2:update(price2, planned2)
+				log:trace(string.format("order2 pos: %s; planned: %s; price: %s", order2.position, planned2, price2))
 			else
 				log:trace(string.format("order2 max pos %s reached: %s ; %s", ORDER2_MAX, order1.position, order2.position))
 			end
