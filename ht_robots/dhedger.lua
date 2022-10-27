@@ -3,9 +3,11 @@ dofile(string.format("%s\\lua\\hacktrade-ffeast.lua", getWorkingFolder()))
 require("Black-Scholes") -- функции расчета теоретической цены и греков
 require("utils2")		 -- вспомогательные функции
 
+-- Дельта-хэджер по всем открытым позициям заданного тикера
+
 function Robot()
 
-	FIRMID = "SPBFUT****" -- код фирмы
+	FIRMID = "SPBFUT****" 	-- код фирмы
 	ACC = "SPBFUT****"		-- торговый счет
 	CLI = "158****"			-- код клиента
 	FUT_CLASS = "SPBFUT"

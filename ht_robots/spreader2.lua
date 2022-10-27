@@ -2,22 +2,33 @@ dofile(string.format("%s\\lua\\hacktrade-ffeast.lua", getWorkingFolder()))
 
 require("utils2")		 -- вспомогательные функции
 
+-- Робот выставляет одновременно заявки и на покупку, и на продажу айсбергами.
+-- При исполнении одной из них размер айсберга противоположной заявки пополняется на исполненное кол-во лотов
+
 function Robot()
 
 	ACC = "SPBFUT****"		-- торговый счет
 	CLI = "158****"			-- код клиента
 	FUT_CLASS = "SPBFUT"	-- класс FORTS
-	FUT_TICKER = "SRZ2"		-- код бумаги фьючерса
+	FUT_TICKER = "VIX2"		-- код бумаги фьючерса
 	
-	PRICE_INTERVAL = 55		-- покупка выше центра, продажа ниже центра
-	PRICE_STEP = 25			-- между частями продаж/покупок
-	ICEBERG_SIZE = 20
-	ICEBERG_PART = 1
+	-- покупка
+	ORDER1_MAX = 10				-- макс лотов может быть набрано в лонг
+	ORDER1_PART = 2				-- лотов в одной заявке
+	
+	-- продажа
+	ORDER2_MAX = -10			-- макс лотов может быть набрано в шорт
+	ORDER2_PART = -2			-- лотов в одной заявке
 	
 	SLEEP_WITH_ORDER = 5000	-- время ожидания исполнения выставленного ордера до пересчета теоретической цены (в миллисекундах)
 	SLEEP_WO_ORDER = 100	-- время ожидания после снятия ордера (в миллисекундах)
-
-    order1 = SmartOrder{
+	
+	feed = MarketData{
+        market = FUT_CLASS,
+        ticker = FUT_TICKER,
+    }
+	
+	order1 = SmartOrder{
         account = ACC,
         client = CLI,
         market = FUT_CLASS,
@@ -30,9 +41,6 @@ function Robot()
         market = FUT_CLASS,
         ticker = FUT_TICKER,
     }
-
-	local center = getParamEx(FUT_CLASS, FUT_TICKER, "settleprice").param_value
-	local sec_price_step = getParamEx(FUT_CLASS, FUT_TICKER, "SEC_PRICE_STEP").param_value
 	
 	local price1
 	local planned1
@@ -48,7 +56,7 @@ function Robot()
 			return false
 		end
 		
-		if tonumber(getParamEx(FUT_CLASS, FUT_TICKER, "TRADINGSTATUS").param_value) ~= 1
+		if tonumber(getParamEx(FUT_CLASS, FUT_TICKER, "TRADINGSTATUS").param_value) ~= 1 then
 			log:trace("session inactive, waiting for trading status")
 			sleep(15000)
 			return false
@@ -77,27 +85,31 @@ function Robot()
 			end
 		end
 	end
-	
-	log:trace("center "..formatPrice(center).."; interval "..formatPrice(PRICE_INTERVAL).."; step "..formatPrice(PRICE_STEP))
+
+	log:trace(string.format("order1 max: %s by %s; order2 max: %s by %s", ORDER1_MAX, ORDER1_PART, ORDER2_MAX, ORDER1_PART))
 
     while true do
-	
-		if isReady() then
 		
-			if math.abs(order1.position + order2.position) < ICEBERG_SIZE then
-				
-				price1 = formatPrice(center + PRICE_INTERVAL + (-order1.position-order2.position+1) * ICEBERG_PART * PRICE_STEP)
-				planned1 = order1.position - ICEBERG_PART
-				order1:update(price1, planned1)
-				log:trace("order1 pos: "..order1.position.."; planned: "..formatPrice(planned1).."; price: "..formatPrice(price1))
+		if isReady() then
 
-				price2 = formatPrice(center - PRICE_INTERVAL - (order2.position+order1.position+1) * ICEBERG_PART * PRICE_STEP)
-				planned2 = order2.position + ICEBERG_PART
-				order2:update(price2, planned2)
-				log:trace("order2 pos: "..order2.position.."; planned: "..formatPrice(planned2).."; price: "..formatPrice(price2))
-			else 
-				log:trace("max position reached, order1: " ..order1.position .. "; order2: " .. order2.position)
+			if order1.position + order2.position < ORDER1_MAX then
+				price1 = formatPrice(feed.bids[1].price)
+				planned1 = order1.position + ORDER1_PART
+				order1:update(price1, planned1)
+				log:trace(string.format("order1 pos: %s; planned: %s; price: %s", order1.position, planned1, price1))
+			else
+				log:trace(string.format("order1 max pos %s reached: %s ; %s", ORDER1_MAX, order1.position, order2.position))
 			end
+			
+			if order1.position + order2.position > ORDER2_MAX then
+				price2 = formatPrice(feed.offers[1].price)
+				planned2 = order2.position + ORDER2_PART
+				order2:update(price2, planned2)
+				log:trace(string.format("order2 pos: %s; planned: %s; price: %s", order2.position, planned2, price2))
+			else
+				log:trace(string.format("order2 max pos %s reached: %s ; %s", ORDER2_MAX, order1.position, order2.position))
+			end
+			
 			
 			Trade()
 			
@@ -114,12 +126,3 @@ function Robot()
 	end
 
 end
-
-
-
-
-
-
-
-
-

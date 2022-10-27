@@ -3,6 +3,11 @@ dofile(string.format("%s\\lua\\hacktrade-ffeast.lua", getWorkingFolder()))
 require("Black-Scholes") -- функции расчета теоретической цены и греков
 require("utils2")		 -- вспомогательные функции
 
+-- Робот для котирования опционов по волатильности. Волатильность берется из quik-а.
+-- Есть макс вол-ть, по которой выставляем ордера с наибольшей выгодной, если стакан пустой, 
+-- и мин вол-ть, по которой готовы выставлять, чтобы быть первым в стакане.
+-- Купленные опционы автоматически становятся в очередь на продажу и наоборот
+
 function Robot()
 
 	ACC = "SPBFUT****"				-- торговый счет
@@ -70,7 +75,7 @@ function Robot()
 			return false
 		end
 		
-		if tonumber(getParamEx(FUT_CLASS, FUT_TICKER, "TRADINGSTATUS").param_value) ~= 1
+		if tonumber(getParamEx(FUT_CLASS, FUT_TICKER, "TRADINGSTATUS").param_value) ~= 1 then
 			log:trace("session inactive, waiting for trading status")
 			sleep(15000)
 			return false
