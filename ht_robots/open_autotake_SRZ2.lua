@@ -58,7 +58,7 @@ function Robot()
 			return false
 		end
 		
-		if tonumber(getParamEx(FUT_CLASS, FUT_TICKER, "TRADINGSTATUS").param_value) ~= 1 then
+		if is_trading_time and tonumber(getParamEx(FUT_CLASS, FUT_TICKER, "TRADINGSTATUS").param_value) ~= 1 then
 			log:trace("session inactive, waiting for trading status")
 			sleep(15000)
 			return false

@@ -7,7 +7,7 @@ require("utils2")		 -- вспомогательные функции
 
 function Robot()
 
-	FIRMID = "SPBFUT****" 	-- код фирмы
+	FIRMID = "SPBFUT58****" -- код фирмы
 	ACC = "SPBFUT****"		-- торговый счет
 	CLI = "158****"			-- код клиента
 	FUT_CLASS = "SPBFUT"

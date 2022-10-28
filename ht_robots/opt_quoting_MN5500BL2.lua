@@ -14,15 +14,15 @@ function Robot()
 	CLI = "158****"					-- код клиента
 	FUT_CLASS = "SPBFUT"
 	OPT_CLASS = "SPBOPT"
-	FUT_TICKER = "SRZ2" 			-- FUT_TICKER = "SRZ2"
-	OPT_TICKER = "SR11000BJ2B" 		-- OPT_TICKER = "SR11000BJ2B"
+	FUT_TICKER = "MNZ2" 			-- FUT_TICKER = "SRZ2"
+	OPT_TICKER = "MN5500BL2" 		-- OPT_TICKER = "SR11000BJ2B"
 	
-	ORDER1_SIZE = 3					-- число лотов на покупку
-	ORDER2_SIZE = 1					-- число лотов на продажу
-	ORDER1_MIN_PROFIT_VOLA = -6.00	-- минимальная скидка покупки по волатильности, чтобы не стоять в конце стакана, если есть конкуренты
-	ORDER1_MAX_PROFIT_VOLA = -10.00	-- максимальная: если стакан пустой, котируем покупку по цене девешле на это значение волатильности
-	ORDER2_MIN_PROFIT_VOLA = 6.00
-	ORDER2_MAX_PROFIT_VOLA = 10.00
+	ORDER1_SIZE = 2					-- число лотов на покупку
+	ORDER2_SIZE = 2					-- число лотов на продажу
+	ORDER1_MIN_PROFIT_VOLA = -5.00	-- минимальная скидка покупки по волатильности, чтобы не стоять в конце стакана, если есть конкуренты
+	ORDER1_MAX_PROFIT_VOLA = -9.00	-- максимальная: если стакан пустой, котируем покупку по цене девешле на это значение волатильности
+	ORDER2_MIN_PROFIT_VOLA = 5.00
+	ORDER2_MAX_PROFIT_VOLA = 9.00
 	SENSITIVITY = 3					-- люфт - разница между текущей ценой заявки и новой расчетной ценой в шагах цены. Если разница меньше, чем люфт, то имеющуюся заявку не меняем.
 	
 	SLEEP_WITH_ORDER = 5000	-- время ожидания исполнения выставленного ордера до пересчета теоретической цены (в миллисекундах)
@@ -75,7 +75,7 @@ function Robot()
 			return false
 		end
 		
-		if tonumber(getParamEx(FUT_CLASS, FUT_TICKER, "TRADINGSTATUS").param_value) ~= 1 then
+		if is_trading_time and tonumber(getParamEx(FUT_CLASS, FUT_TICKER, "TRADINGSTATUS").param_value) ~= 1 then
 			log:trace("session inactive, waiting for trading status")
 			sleep(15000)
 			return false

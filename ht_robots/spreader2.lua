@@ -57,7 +57,7 @@ function Robot()
 			return false
 		end
 		
-		if tonumber(getParamEx(FUT_CLASS, FUT_TICKER, "TRADINGSTATUS").param_value) ~= 1 then
+		if is_trading_time and tonumber(getParamEx(FUT_CLASS, FUT_TICKER, "TRADINGSTATUS").param_value) ~= 1 then
 			log:trace("session inactive, waiting for trading status")
 			sleep(15000)
 			return false
@@ -97,10 +97,12 @@ function Robot()
 				
 				bid = 0
 				if feed.bids[2] ~= nil then
-					if feed.bids[2].price + feed.sec_price_step ~= tonumber(order1.price) or feed.bids[2].quantity ~= (order1.planned - order1.position) then
+					if feed.bids[2].price + feed.sec_price_step == tonumber(order1.price) and feed.bids[2].quantity ~= formatPrice(order1.planned - order1.position) then
+						if feed.bids[3] ~= nil then
+							bid = feed.bids[3].price
+						end
+					else
 						bid = feed.bids[2].price
-					elseif feed.bids[3] ~= nil then
-						bid = feed.bids[3].price
 					end
 				end
 				
@@ -120,10 +122,12 @@ function Robot()
 				
 				offer = 0
 				if feed.offers[1] ~= nil then
-					if feed.offers[1].price ~= tonumber(order2.price) or feed.offers[1].quantity ~= (order2.position - order2.planned) then
+					if feed.offers[1].price ~= tonumber(order2.price) and feed.offers[1].quantity ~= formatPrice(order2.position - order2.planned) then
+						if feed.offers[2] ~= nil then
+							offer = feed.offers[2].price
+						end
+					else
 						offer = feed.offers[1].price
-					elseif feed.offers[2] ~= nil then
-						offer = feed.offers[2].price
 					end
 				end
 				
