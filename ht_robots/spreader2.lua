@@ -97,7 +97,7 @@ function Robot()
 				
 				bid = 0
 				if feed.bids[2] ~= nil then
-					if feed.bids[2].price ~= tonumber(order1.price) or feed.bids[2].quantity ~= ORDER1_PART then
+					if feed.bids[2].price + feed.sec_price_step ~= tonumber(order1.price) or feed.bids[2].quantity ~= (order1.planned - order1.position) then
 						bid = feed.bids[2].price
 					elseif feed.bids[3] ~= nil then
 						bid = feed.bids[3].price
@@ -120,7 +120,7 @@ function Robot()
 				
 				offer = 0
 				if feed.offers[1] ~= nil then
-					if feed.offers[1].price ~= tonumber(order2.price) or feed.offers[1].quantity ~= ORDER2_PART then
+					if feed.offers[1].price ~= tonumber(order2.price) or feed.offers[1].quantity ~= (order2.position - order2.planned) then
 						offer = feed.offers[1].price
 					elseif feed.offers[2] ~= nil then
 						offer = feed.offers[2].price

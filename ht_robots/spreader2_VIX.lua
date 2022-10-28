@@ -14,12 +14,12 @@ function Robot()
 	FUT_TICKER = "VIX2"		-- код бумаги фьючерса
 	
 	-- покупка
-	ORDER1_MAX = 1				-- макс лотов может быть набрано в лонг
-	ORDER1_PART = 1				-- лотов в одной заявке
+	ORDER1_MAX = 2				-- макс лотов может быть набрано в лонг
+	ORDER1_PART = 2				-- лотов в одной заявке
 	
 	-- продажа
-	ORDER2_MAX = -3				-- макс лотов может быть набрано в шорт
-	ORDER2_PART = -1			-- лотов в одной заявке
+	ORDER2_MAX = -6				-- макс лотов может быть набрано в шорт
+	ORDER2_PART = -2			-- лотов в одной заявке
 	
 	SLEEP_WITH_ORDER = 5000	-- время ожидания исполнения выставленного ордера до пересчета теоретической цены (в миллисекундах)
 	SLEEP_WO_ORDER = 100	-- время ожидания после снятия ордера (в миллисекундах)
@@ -97,7 +97,7 @@ function Robot()
 				
 				bid = 0
 				if feed.bids[2] ~= nil then
-					if feed.bids[2].price ~= tonumber(order1.price) or feed.bids[2].quantity ~= ORDER1_PART then
+					if feed.bids[2].price + feed.sec_price_step ~= tonumber(order1.price) or feed.bids[2].quantity ~= (order1.planned - order1.position) then
 						bid = feed.bids[2].price
 					elseif feed.bids[3] ~= nil then
 						bid = feed.bids[3].price
@@ -120,7 +120,7 @@ function Robot()
 				
 				offer = 0
 				if feed.offers[1] ~= nil then
-					if feed.offers[1].price ~= tonumber(order2.price) or feed.offers[1].quantity ~= ORDER2_PART then
+					if feed.offers[1].price ~= tonumber(order2.price) or feed.offers[1].quantity ~= (order2.position - order2.planned) then
 						offer = feed.offers[1].price
 					elseif feed.offers[2] ~= nil then
 						offer = feed.offers[2].price
