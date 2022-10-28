@@ -97,17 +97,17 @@ function Robot()
 				
 				bid = 0
 				if feed.bids[2] ~= nil then
-					if feed.bids[2].price + feed.sec_price_step == tonumber(order1.price) and feed.bids[2].quantity ~= formatPrice(order1.planned - order1.position) then
+					if feed.bids[2].price + feed.sec_price_step == order1.price and feed.bids[2].quantity == order1.planned - order1.position then
 						if feed.bids[3] ~= nil then
 							bid = feed.bids[3].price
 						end
 					else
 						bid = feed.bids[2].price
 					end
-				end
-				
+				end			
+					
 				if bid ~= 0 then
-					price1 = bid + feed.sec_price_step
+					price1 = formatPrice(bid + feed.sec_price_step)
 					order1:update(price1, order1.position + ORDER1_PART)
 					log:trace(string.format("order1 pos: %s; planned: %s; price: %s;", order1.position, order1.planned, price1))
 				else
@@ -122,7 +122,7 @@ function Robot()
 				
 				offer = 0
 				if feed.offers[1] ~= nil then
-					if feed.offers[1].price ~= tonumber(order2.price) and feed.offers[1].quantity ~= formatPrice(order2.position - order2.planned) then
+					if feed.offers[1].price == order2.price and feed.offers[1].quantity == order2.position - order2.planned then
 						if feed.offers[2] ~= nil then
 							offer = feed.offers[2].price
 						end
@@ -157,6 +157,5 @@ function Robot()
 			
 		end
 	end
-
 
 end
