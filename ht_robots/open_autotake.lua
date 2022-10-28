@@ -49,7 +49,7 @@ function Robot()
 	local price2
 	local planned2
 	
-	local is_trading_time = true
+	local is_trading_time = isTradingTime()
 	
 	local function isReady()
 		if isConnected() ~= 1 then

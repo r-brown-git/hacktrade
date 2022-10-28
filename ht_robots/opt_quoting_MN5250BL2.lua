@@ -66,7 +66,7 @@ function Robot()
 	local best_offer = 0
 	local best_bid = 0
 	
-	local is_trading_time = true
+	local is_trading_time = isTradingTime()
 	
 	local function isReady()
 		if isConnected() ~= 1 then

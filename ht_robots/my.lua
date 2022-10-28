@@ -21,7 +21,7 @@ function Robot()
         ticker = FUT_TICKER,
     }
 	
-	local is_trading_time = false
+	local is_trading_time = isTradingTime()
 
 	if is_trading_time and check() then
 		message("session inactive, waiting for trading status")
