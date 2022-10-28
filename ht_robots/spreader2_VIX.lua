@@ -14,12 +14,12 @@ function Robot()
 	FUT_TICKER = "VIX2"		-- код бумаги фьючерса
 	
 	-- покупка
-	ORDER1_MAX = 2				-- макс лотов может быть набрано в лонг
-	ORDER1_PART = 2				-- лотов в одной заявке
+	ORDER1_MAX = 1				-- макс лотов может быть набрано в лонг
+	ORDER1_PART = 1				-- лотов в одной заявке
 	
 	-- продажа
-	ORDER2_MAX = -6				-- макс лотов может быть набрано в шорт
-	ORDER2_PART = -2			-- лотов в одной заявке
+	ORDER2_MAX = -1				-- макс лотов может быть набрано в шорт
+	ORDER2_PART = -1			-- лотов в одной заявке
 	
 	SLEEP_WITH_ORDER = 5000	-- время ожидания исполнения выставленного ордера до пересчета теоретической цены (в миллисекундах)
 	SLEEP_WO_ORDER = 100	-- время ожидания после снятия ордера (в миллисекундах)
@@ -94,23 +94,22 @@ function Robot()
 		if isReady() then
 
 			if order1.position + order2.position < ORDER1_MAX then
-				
-				bid = 0
+				price1 = 0
 				if feed.bids[2] ~= nil then
-					if feed.bids[2].price + feed.sec_price_step == order1.price and feed.bids[2].quantity == order1.planned - order1.position then
+					if order1.order ~= nil and feed.bids[2].price == tonumber(order1.price) and feed.bids[2].quantity == order1.planned - order1.position then
 						if feed.bids[3] ~= nil then
-							bid = feed.bids[3].price
+							price1 = formatPrice(feed.bids[3].price + feed.sec_price_step)
 						end
 					else
-						bid = feed.bids[2].price
+						price1 = formatPrice(feed.bids[2].price + feed.sec_price_step)
 					end
 				end			
-					
-				if bid ~= 0 then
-					price1 = formatPrice(bid + feed.sec_price_step)
+	
+				if price1 ~= 0 then
 					order1:update(price1, order1.position + ORDER1_PART)
 					log:trace(string.format("order1 pos: %s; planned: %s; price: %s;", order1.position, order1.planned, price1))
 				else
+					order1:update(nil, order1.position)
 					log:trace("no bids")
 				end
 				
@@ -120,29 +119,28 @@ function Robot()
 			
 			if order1.position + order2.position > ORDER2_MAX then
 				
-				offer = 0
+				price2 = 0
 				if feed.offers[1] ~= nil then
-					if feed.offers[1].price == order2.price and feed.offers[1].quantity == order2.position - order2.planned then
+					if order2.order ~= nil and feed.offers[1].price == tonumber(order2.price) and feed.offers[1].quantity == order2.position - order2.planned then
 						if feed.offers[2] ~= nil then
-							offer = feed.offers[2].price
+							price2 = feed.offers[2].price
 						end
 					else
-						offer = feed.offers[1].price
+						price2 = feed.offers[1].price
 					end
 				end
-				
-				if offer ~= 0 then
-					price2 = offer
+		
+				if price2 ~= 0 then
 					order2:update(price2, order2.position + ORDER2_PART)
 					log:trace(string.format("order2 pos: %s; planned: %s; price: %s;", order2.position, order2.planned, price2))
 				else
+					order2:update(nil, order2.position)
 					log:trace("no offers")
 				end
 				
 			else
 				log:trace(string.format("order2 max pos %s reached: %s ; %s", ORDER2_MAX, order1.position, order2.position))
 			end
-			
 			
 			Trade()
 			

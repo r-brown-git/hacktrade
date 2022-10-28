@@ -10,8 +10,8 @@ function Robot()
 
 	ACC = "SPBFUT****"		-- торговый счет
 	CLI = "158****"			-- код клиента
-	FUT_CLASS = "SPBFUT"	-- класс FORTS
-	FUT_TICKER = "MNZ2"		-- код бумаги фьючерса
+	FUT_CLASS = "SPBOPT"	-- класс FORTS
+	FUT_TICKER = "SR12500BW2A"		-- код бумаги фьючерса
 	
 	-- покупка
 	ORDER1_MAX = 1				-- макс лотов может быть набрано в лонг
