@@ -14,16 +14,16 @@ function Robot()
 	FUT_TICKER = "SRZ2"		-- код бумаги фьючерса
 	
 	-- покупка
-	ORDER1_MAX = 20				-- макс лотов может быть набрано в лонг
-	ORDER1_PART = 1				-- лотов в одной заявке
-	ORDER1_FROM_CENTER = -50	-- цена первой покупки при отклонении от цены старта на это значение
-	ORDER1_STEP = -15			-- следующая покупка ниже предыдущей на это значение
+	ORDER1_MAX = 32				-- макс лотов может быть набрано в лонг
+	ORDER1_PART = 2				-- лотов в одной заявке
+	ORDER1_FROM_CENTER = 25		-- цена первой покупки при отклонении от цены старта на это значение
+	ORDER1_STEP = 10			-- следующая покупка ниже предыдущей на это значение
 	
 	-- продажа
-	ORDER2_MAX = -20			-- макс лотов может быть набрано в шорт
-	ORDER2_PART = -1			-- лотов в одной заявке
-	ORDER2_FROM_CENTER = 50		-- цена первой продажи при отклонении от цены старта на это значение
-	ORDER2_STEP = 15			-- следующая продажа выше предыдущей на это значение
+	ORDER2_MAX = 8			-- макс лотов может быть набрано в шорт
+	ORDER2_PART = 2			-- лотов в одной заявке
+	ORDER2_FROM_CENTER = 25		-- цена первой продажи при отклонении от цены старта на это значение
+	ORDER2_STEP = 10			-- следующая продажа выше предыдущей на это значение
 	
 	SLEEP_WITH_ORDER = 5000	-- время ожидания исполнения выставленного ордера до пересчета теоретической цены (в миллисекундах)
 	SLEEP_WO_ORDER = 100	-- время ожидания после снятия ордера (в миллисекундах)
@@ -95,7 +95,7 @@ function Robot()
 		if isReady() then
 
 			if order1.position + order2.position < ORDER1_MAX then
-				price2 = formatPrice(center + ORDER2_FROM_CENTER - (order2.position/ORDER2_PART+order1.position/ORDER1_PART)*ORDER2_STEP)
+				price1 = formatPrice(center - ORDER1_FROM_CENTER - (order1.position/ORDER1_PART+order2.position/ORDER2_PART)*ORDER1_STEP)
 				planned1 = order1.position + ORDER1_PART
 				order1:update(price1, planned1)
 				log:trace(string.format("order1 pos: %s; planned: %s; price: %s", order1.position, planned1, price1))
@@ -103,9 +103,9 @@ function Robot()
 				log:trace(string.format("order1 max pos %s reached: %s ; %s", ORDER1_MAX, order1.position, order2.position))
 			end
 			
-			if order1.position + order2.position > ORDER2_MAX then
-				price2 = formatPrice(center + ORDER2_FROM_CENTER - (order2.position/ORDER2_PART+order1.position/ORDER1_PART)*ORDER2_STEP)
-				planned2 = order2.position + ORDER2_PART
+			if -(order1.position + order2.position) < ORDER2_MAX then
+				price2 = formatPrice(center + ORDER2_FROM_CENTER - (order1.position/ORDER1_PART+order2.position/ORDER2_PART)*ORDER2_STEP)
+				planned2 = order2.position - ORDER2_PART
 				order2:update(price2, planned2)
 				log:trace(string.format("order2 pos: %s; planned: %s; price: %s", order2.position, planned2, price2))
 			else

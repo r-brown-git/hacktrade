@@ -16,12 +16,12 @@ function Robot()
 	-- покупка
 	ORDER1_MAX = 30				-- макс лотов может быть набрано в лонг
 	ORDER1_PART = 1				-- лотов в одной заявке
-	ORDER1_FROM_CENTER = -50	-- цена первой покупки при отклонении от цены старта на это значение
-	ORDER1_STEP = -10			-- следующая покупка ниже предыдущей на это значение
+	ORDER1_FROM_CENTER = 50		-- цена первой покупки при отклонении от цены старта на это значение
+	ORDER1_STEP = 10			-- следующая покупка ниже предыдущей на это значение
 	
 	-- продажа
-	ORDER2_MAX = -30			-- макс лотов может быть набрано в шорт
-	ORDER2_PART = -1			-- лотов в одной заявке
+	ORDER2_MAX = 30				-- макс лотов может быть набрано в шорт
+	ORDER2_PART = 1				-- лотов в одной заявке
 	ORDER2_FROM_CENTER = 50		-- цена первой продажи при отклонении от цены старта на это значение
 	ORDER2_STEP = 10			-- следующая продажа выше предыдущей на это значение
 	
@@ -95,7 +95,7 @@ function Robot()
 		if isReady() then
 
 			if order1.position + order2.position < ORDER1_MAX then
-				price1 = formatPrice(center + ORDER1_FROM_CENTER + (order1.position/ORDER1_PART+order2.position/ORDER2_PART)*ORDER1_STEP)
+				price1 = formatPrice(center - ORDER1_FROM_CENTER - (order1.position/ORDER1_PART+order2.position/ORDER2_PART)*ORDER1_STEP)
 				planned1 = order1.position + ORDER1_PART
 				order1:update(price1, planned1)
 				log:trace(string.format("order1 pos: %s; planned: %s; price: %s", order1.position, planned1, price1))
@@ -103,9 +103,9 @@ function Robot()
 				log:trace(string.format("order1 max pos %s reached: %s ; %s", ORDER1_MAX, order1.position, order2.position))
 			end
 			
-			if order1.position + order2.position > ORDER2_MAX then
-				price2 = formatPrice(center + ORDER2_FROM_CENTER - (order2.position/ORDER2_PART+order1.position/ORDER1_PART)*ORDER2_STEP)
-				planned2 = order2.position + ORDER2_PART
+			if -(order1.position + order2.position) < ORDER2_MAX then
+				price2 = formatPrice(center + ORDER2_FROM_CENTER - (order1.position/ORDER1_PART+order2.position/ORDER2_PART)*ORDER2_STEP)
+				planned2 = order2.position - ORDER2_PART
 				order2:update(price2, planned2)
 				log:trace(string.format("order2 pos: %s; planned: %s; price: %s", order2.position, planned2, price2))
 			else
