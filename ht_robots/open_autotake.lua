@@ -95,7 +95,7 @@ function Robot()
 		if isReady() then
 
 			if order1.position + order2.position < ORDER1_MAX then
-				price1 = formatPrice(center - ORDER1_FROM_CENTER - (order1.position/ORDER1_PART+order2.position/ORDER2_PART)*ORDER1_STEP)
+				price1 = formatPrice(center - ORDER1_FROM_CENTER - (order1.position/ORDER1_PART*ORDER1_STEP+order2.position/ORDER2_PART*ORDER2_STEP))
 				planned1 = order1.position + ORDER1_PART
 				order1:update(price1, planned1)
 				log:trace(string.format("order1 pos: %s; planned: %s; price: %s", order1.position, planned1, price1))
@@ -104,7 +104,7 @@ function Robot()
 			end
 			
 			if -(order1.position + order2.position) < ORDER2_MAX then
-				price2 = formatPrice(center + ORDER2_FROM_CENTER - (order1.position/ORDER1_PART+order2.position/ORDER2_PART)*ORDER2_STEP)
+				price2 = formatPrice(center + ORDER2_FROM_CENTER - (order1.position/ORDER1_PART*ORDER1_STEP+order2.position/ORDER2_PART*ORDER2_STEP))
 				planned2 = order2.position - ORDER2_PART
 				order2:update(price2, planned2)
 				log:trace(string.format("order2 pos: %s; planned: %s; price: %s", order2.position, planned2, price2))
