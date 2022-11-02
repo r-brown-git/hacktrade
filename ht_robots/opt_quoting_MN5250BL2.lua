@@ -159,6 +159,7 @@ function Robot()
 					end
 				end
 			end
+			price1 = price1 - math.fmod(price1, step)
 
 			price2 = theor_price_max_profit2
 			if best_offer ~= 0 then
@@ -170,6 +171,7 @@ function Robot()
 					end
 				end
 			end
+			price2 = price2 - math.fmod(price2, step)
 
 			if math.abs(price1 - price1_prev) < SENSITIVITY * step then
 				price1 = price1_prev
@@ -196,12 +198,10 @@ function Robot()
 			theor_price_max_profit1 = theor_price_max_profit1 - math.fmod(theor_price_max_profit1, step)
 			theor_price_min_profit1 = theor_price_min_profit1 - math.fmod(theor_price_min_profit1, step)
 			best_bid = best_bid - math.fmod(best_bid, step)
-			price1 = price1 - math.fmod(price1, step)
 			
 			theor_price_max_profit2 = theor_price_max_profit2 - math.fmod(theor_price_max_profit2, step)
 			theor_price_min_profit2 = theor_price_min_profit2 - math.fmod(theor_price_min_profit2, step)
 			best_bid = best_bid - math.fmod(best_bid, step)
-			price2 = price2 - math.fmod(price2, step)
 			
 			order1:update(formatPrice(price1), ORDER1_SIZE-order2.position)
 
