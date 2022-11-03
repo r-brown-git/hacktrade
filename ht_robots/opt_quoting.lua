@@ -133,7 +133,7 @@ function Robot()
 
 			best_bid = 0
 			if feed.bids[1] ~= nil then
-				if order1.order == nil or (feed.bids[1].price ~= tonumber(order1.price) and feed.bids[1].quantity == order1.position - order1.planned) then
+				if order1.order == nil or feed.bids[1].price ~= tonumber(order1.price) then
 					best_bid = feed.bids[1].price
 				elseif feed.bids[2] ~= nil then
 					best_bid = feed.bids[2].price
@@ -142,7 +142,7 @@ function Robot()
 			
 			best_offer = 0
 			if feed.offers[1] ~= nil then
-				if order2.order == nil or (feed.offers[1].price ~= tonumber(order2.price) and feed.offers[1].quantity == order2.position - order2.planned) then
+				if order2.order == nil or feed.offers[1].price ~= tonumber(order2.price) then
 					best_offer = feed.offers[1].price
 				elseif feed.offers[2] ~= nil then
 					best_offer = feed.offers[2].price
