@@ -117,7 +117,7 @@ function Robot()
 			
 			if hedge_count ~= 0 then
 				repeat
-					order:update(formatPrice(feed.last), pos.totalnet + hedge_count)
+					order:update(formatPrice(feed.last), order.position + hedge_count)
 					Trade()
 				until order.filled
 			end
