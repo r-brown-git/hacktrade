@@ -43,6 +43,7 @@ function Robot()
 	local opt_month
 	local opt_type
 	local hedge_count
+	local planned
 	
 	local function isReady()
 		if isConnected() == 1 then
@@ -116,13 +117,15 @@ function Robot()
 			log:trace(string.format("delta: %.4f; hedge_count: %d", sum_delta, hedge_count))
 			
 			if hedge_count ~= 0 then
+				planned = order.position + hedge_count
 				repeat
-					order:update(formatPrice(feed.last), order.position + hedge_count)
+					order:update(formatPrice(feed.last), planned)
 					Trade()
+					sleep(500)
 				until order.filled
 			end
 			
-			sleep(5000)
+			sleep(15000)
 		end
 	end
 end
