@@ -38,6 +38,8 @@ function Robot()
 	local dt
 	local pos = {}
 	local delta = 0
+	local opt_delta
+	local fut_delta
 	local sum_delta
 	local opt_strike
 	local opt_month
@@ -78,7 +80,8 @@ function Robot()
 				end
 			end
 			
-			sum_delta = 0
+			opt_delta = 0
+			fut_delta = 0
 			hedge_count = 0
 			
 			for i, opt_ticker in ipairs(our_opt_list) do
@@ -98,15 +101,17 @@ function Robot()
 					
 					delta = Greeks(tmpParam)["Delta"]
 
-					sum_delta = sum_delta + pos.totalnet * delta
+					opt_delta = opt_delta + pos.totalnet * delta
 					
 				end
 			end
 			
 			pos = getFuturesHolding(FIRMID, ACC, FUT_TICKER, 0)
 			if pos and pos.totalnet ~= 0 then
-				sum_delta = sum_delta + pos.totalnet
+				fut_delta = pos.totalnet
 			end
+			
+			sum_delta = opt_delta + fut_delta
 			
 			if sum_delta < MIN_DELTA - SENSITIVITY_DELTA then
 				hedge_count = round(MIN_DELTA - sum_delta, 0)
@@ -114,14 +119,15 @@ function Robot()
 				hedge_count = -round(sum_delta - MAX_DELTA, 0)
 			end
 			
-			log:trace(string.format("delta: %.4f; hedge_count: %d", sum_delta, hedge_count))
+			log:trace(string.format("opt_delta: %.4f; fut_delta: %.4f; sum_delta: %.4f; hedge_count: %d", opt_delta, fut_delta, sum_delta, hedge_count))
 			
 			if hedge_count ~= 0 then
 				planned = order.position + hedge_count
+				log:trace(string.format("send hedge order count: %d", planned))
 				repeat
 					order:update(formatPrice(feed.last), planned)
 					Trade()
-					sleep(500)
+					sleep(5000)
 				until order.filled
 			end
 			
